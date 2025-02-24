@@ -6,7 +6,7 @@ import plotly.express as px
 import pandas as pd
 
 # Cargar datos
-file_path = r"C:\Users\USUARIO\Documents\BS-Proyecto1\Proyecto1\x_test.csv"
+file_path = "./x_test.csv"
 df = pd.read_csv(file_path)
 
 # Normalizar nombres de columnas
