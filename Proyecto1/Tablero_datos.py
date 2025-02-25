@@ -20,6 +20,30 @@ app = dash.Dash(__name__)
 
 # Diseño del tablero
 app.layout = html.Div([
+    # Sección de Predicción con Random Forest
+    html.Div([
+        html.H3("Predicción del Precio con Random Forest"),
+        html.Div([
+            html.Label("Número de habitaciones:"),
+            dcc.Dropdown(id='predict_habitaciones', 
+                         options=[{'label': str(h), 'value': h} for h in sorted(df['bedrooms'].dropna().unique())],
+                         placeholder="Seleccione el número de habitaciones")
+        ], style={'margin-bottom': '10px'}),
+        html.Div([
+            html.Label("Área en m²:"),
+            dcc.Input(id='predict_area', type='number', placeholder='Ingrese el área en m²')
+        ], style={'margin-bottom': '10px'}),
+        html.Div([
+            html.Label("Ubicación (Ciudad):"),
+            dcc.Dropdown(id='predict_ciudad', 
+                         options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
+                         placeholder="Seleccione una ciudad")
+        ], style={'margin-bottom': '10px'}),
+        html.Button('Predecir Precio', id='btn_predecir', n_clicks=0, style={'margin-top': '10px'}),
+        html.Div(id='resultado_prediccion', style={'marginTop': '20px', 'fontSize': '20px', 'fontWeight': 'bold'}),
+        html.P("Ingrese las características del inmueble para predecir el precio usando un modelo de Random Forest.")
+        
+    ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
     html.H1("Tablero de Datos - Alquiler de Apartamentos"),
 
     # Filtros para Histograma
@@ -78,6 +102,33 @@ app.layout = html.Div([
     ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
 ])
 
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+
+# Entrenar modelo de Random Forest
+X = df[['bedrooms', 'square_feet']]
+y = df['price']
+X = X.dropna()
+y = y.loc[X.index]  # Asegurar que los datos estén alineados
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+modelo_rf = RandomForestRegressor(n_estimators=100, random_state=42)
+modelo_rf.fit(X_train, y_train)
+
+@app.callback(
+    Output('resultado_prediccion', 'children'),
+    [Input('btn_predecir', 'n_clicks')],
+    [dash.dependencies.State('predict_habitaciones', 'value'),
+     dash.dependencies.State('predict_area', 'value')]
+)
+def predecir_precio(n_clicks, habitaciones, area):
+    if n_clicks > 0 and habitaciones is not None and area is not None:
+        import pandas as pd  # Asegurar importación de Pandas
+        entrada = pd.DataFrame([[habitaciones, area]], columns=['bedrooms', 'square_feet'])
+        prediccion = modelo_rf.predict(entrada)[0]
+        prediccion = modelo_rf.predict([[habitaciones, area]])[0]
+        return f"Precio estimado: ${prediccion:,.2f}"
+    return "Ingrese los valores y presione Predecir Precio"  
+
 # Callbacks para actualizar los gráficos
 @app.callback(
     Output('histograma_precios', 'figure'),
@@ -101,6 +152,14 @@ def actualizar_histograma(cityname, precio_max):
 )
 def actualizar_scatter(habitaciones, area):
     df_filtrado = df.copy()
+    if df_filtrado.empty:
+        return px.scatter(x=[0], y=[0], title='No hay datos disponibles')
+    if habitaciones is not None:
+        df_filtrado = df_filtrado[df_filtrado['bedrooms'] == habitaciones]
+    if area is not None:
+        df_filtrado = df_filtrado[df_filtrado['square_feet'] == area]
+    if df_filtrado.empty:
+        return px.scatter(x=[0], y=[0], title='No hay datos disponibles')
     if df_filtrado.empty:
         return px.scatter(x=[0], y=[0], title='No hay datos disponibles')
     if habitaciones is not None:
