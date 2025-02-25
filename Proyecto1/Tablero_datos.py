@@ -6,7 +6,11 @@ import plotly.express as px
 import pandas as pd
 
 # Cargar datos
-file_path = "./x_test.csv"
+file_path="BS-Proyecto1-main/Proyecto1/x_test.csv"
+
+
+
+
 df = pd.read_csv(file_path)
 
 # Normalizar nombres de columnas
@@ -18,89 +22,199 @@ df.rename(columns={'real_price': 'price'}, inplace=True)
 # Inicializar la aplicación Dash
 app = dash.Dash(__name__)
 
-# Diseño del tablero
-app.layout = html.Div([
-    # Sección de Predicción con Random Forest
-    html.Div([
-        html.H3("Predicción del Precio con Random Forest"),
-        html.Div([
-            html.Label("Número de habitaciones:"),
-            dcc.Dropdown(id='predict_habitaciones', 
-                         options=[{'label': str(h), 'value': h} for h in sorted(df['bedrooms'].dropna().unique())],
-                         placeholder="Seleccione el número de habitaciones")
-        ], style={'margin-bottom': '10px'}),
-        html.Div([
-            html.Label("Área en m²:"),
-            dcc.Input(id='predict_area', type='number', placeholder='Ingrese el área en m²')
-        ], style={'margin-bottom': '10px'}),
-        html.Div([
-            html.Label("Ubicación (Ciudad):"),
-            dcc.Dropdown(id='predict_ciudad', 
-                         options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
-                         placeholder="Seleccione una ciudad")
-        ], style={'margin-bottom': '10px'}),
-        html.Button('Predecir Precio', id='btn_predecir', n_clicks=0, style={'margin-top': '10px'}),
-        html.Div(id='resultado_prediccion', style={'marginTop': '20px', 'fontSize': '20px', 'fontWeight': 'bold'}),
-        html.P("Ingrese las características del inmueble para predecir el precio usando un modelo de Random Forest.")
-        
-    ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
-    html.H1("Tablero de Datos - Alquiler de Apartamentos"),
-
-    # Filtros para Histograma
-    html.Div([
-        html.H3("Filtros para Histograma"),
-        html.P("Este gráfico muestra la distribución de los precios de alquiler en función de la ciudad y el precio máximo seleccionado."),
-        html.Label("Ciudad:"),
-        dcc.Dropdown(id='cityname_hist', 
-                     options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
-                     placeholder="Seleccione una ciudad"),
-        html.Label("Precio máximo:"),
-        dcc.Dropdown(id='precio_max_hist', 
-                     options=[{'label': f"${p:,.0f}", 'value': p} for p in sorted(df['price'].dropna().unique())],
-                     placeholder="Seleccione el precio máximo"),
-        dcc.Graph(id='histograma_precios')
-    ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
-
-    # Filtros para Scatter Plot
-    html.Div([
-        html.H3("Filtros para Scatter Plot"),
-        html.P("Este gráfico muestra la relación entre el área en m² y el precio, permitiendo filtrar por número de habitaciones y área seleccionada."),
-        html.Label("Número de habitaciones:"),
-        dcc.Dropdown(id='habitaciones_scatter', 
-                     options=[{'label': str(h), 'value': h} for h in sorted(df['bedrooms'].dropna().unique())],
-                     placeholder="Seleccione el número de habitaciones"),
-        html.Label("Área en m²:"),
-        dcc.Dropdown(id='area_scatter', 
-                     options=[{'label': str(a), 'value': a} for a in sorted(df['square_feet'].dropna().unique())],
-                     placeholder="Seleccione el área en m²"),
-        dcc.Graph(id='scatter_precio_area')
-    ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
-
-    # Filtros para Heatmap de Ubicación
-    html.Div([
-        html.H3("Filtros para Heatmap de Ubicación"),
-        html.P("Este heatmap muestra la distribución geográfica de los precios de alquiler, basándose en la ciudad seleccionada."),
-        html.Label("Ciudad:"),
-        dcc.Dropdown(id='cityname_heatmap', 
-                     options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
-                     placeholder="Seleccione una ciudad"),
-        dcc.Graph(id='heatmap_precio_ubicacion')
-    ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
-
-    # Filtros para Heatmap de Precio con Variable Elegida
-    html.Div([
-        html.H3("Heatmap de Precio vs Variable Elegida"),
-        html.P("Este heatmap permite visualizar cómo varía el precio en función de la variable seleccionada, como área, número de habitaciones, latitud o longitud."),
-        html.Label("Seleccione una variable:"),
-        dcc.Dropdown(id='heatmap_variable',
-                     options=[{'label': 'Área (m²)', 'value': 'square_feet'},
-                              {'label': 'Número de habitaciones', 'value': 'bedrooms'},
-                              {'label': 'Latitud', 'value': 'latitude'},
-                              {'label': 'Longitud', 'value': 'longitude'}],
-                     placeholder="Seleccione una variable"),
-        dcc.Graph(id='heatmap_precio_variable')
-    ], style={'width': '30%', 'display': 'inline-block', 'padding': '20px'}),
-])
+app.layout = html.Div(
+    style={'backgroundColor': '#E3F2FD', 'fontFamily': 'Arial', 'padding': '20px'},
+    children=[
+        html.H1("BS - Alquiler de Apartamentos",
+                style={'textAlign': 'center', 'color': '#0D47A1'}),
+        html.Div(
+            style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'space-between'},
+            children=[
+                # Columna de Predicción
+                html.Div(
+                    style={
+                        'width': '30%',
+                        'backgroundColor': '#BBDEFB',
+                        'padding': '20px',
+                        'borderRadius': '5px',
+                        'marginBottom': '20px'
+                    },
+                    children=[
+                        html.H3("Predicción del Precio con Random Forest",
+                                style={'color': '#1565C0'}),
+                        html.Div([
+                            html.Label("Número de habitaciones:",
+                                       style={'color': '#0D47A1'}),
+                            dcc.Dropdown(
+                                id='predict_habitaciones',
+                                options=[{'label': str(h), 'value': h} for h in sorted(df['bedrooms'].dropna().unique())],
+                                placeholder="Seleccione el número de habitaciones",
+                                style={'backgroundColor': 'white'}
+                            )
+                        ], style={'marginBottom': '10px'}),
+                        html.Div([
+                            html.Label("Área en m²:",
+                                       style={'color': '#0D47A1'}),
+                            dcc.Input(
+                                id='predict_area',
+                                type='number',
+                                placeholder='Ingrese el área en m²',
+                                style={'backgroundColor': 'white'}
+                            )
+                        ], style={'marginBottom': '10px'}),
+                        html.Div([
+                            html.Label("Ubicación (Ciudad):",
+                                       style={'color': '#0D47A1'}),
+                            dcc.Dropdown(
+                                id='predict_ciudad',
+                                options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
+                                placeholder="Seleccione una ciudad",
+                                style={'backgroundColor': 'white'}
+                            )
+                        ], style={'marginBottom': '10px'}),
+                        html.Button('Predecir Precio',
+                                    id='btn_predecir',
+                                    n_clicks=0,
+                                    style={
+                                        'marginTop': '10px',
+                                        'backgroundColor': '#1976D2',
+                                        'color': 'white',
+                                        'border': 'none',
+                                        'padding': '10px'
+                                    }),
+                        html.Div(
+                            id='resultado_prediccion',
+                            style={'marginTop': '20px', 'fontSize': '20px', 'fontWeight': 'bold', 'color': '#0D47A1'}
+                        ),
+                        html.P("Ingrese las características del inmueble para predecir el precio usando un modelo de Random Forest.",
+                               style={'color': '#0D47A1'})
+                    ]
+                ),
+                # Columna de Gráficos (Histograma y Scatter)
+                html.Div(
+                    style={'width': '65%', 'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'space-between'},
+                    children=[
+                        html.Div(
+                            style={
+                                'width': '48%',
+                                'backgroundColor': '#BBDEFB',
+                                'padding': '20px',
+                                'borderRadius': '5px',
+                                'marginBottom': '20px'
+                            },
+                            children=[
+                                html.H3("Filtros para Histograma",
+                                        style={'color': '#1565C0'}),
+                                html.P("Este gráfico muestra la distribución de los precios de alquiler en función de la ciudad y el precio máximo seleccionado.",
+                                       style={'color': '#0D47A1'}),
+                                html.Label("Ciudad:",
+                                           style={'color': '#0D47A1'}),
+                                dcc.Dropdown(
+                                    id='cityname_hist',
+                                    options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
+                                    placeholder="Seleccione una ciudad",
+                                    style={'backgroundColor': 'white'}
+                                ),
+                                html.Label("Precio máximo:",
+                                           style={'color': '#0D47A1'}),
+                                dcc.Dropdown(
+                                    id='precio_max_hist',
+                                    options=[{'label': f"${p:,.0f}", 'value': p} for p in sorted(df['price'].dropna().unique())],
+                                    placeholder="Seleccione el precio máximo",
+                                    style={'backgroundColor': 'white'}
+                                ),
+                                dcc.Graph(id='histograma_precios')
+                            ]
+                        ),
+                        html.Div(
+                            style={
+                                'width': '48%',
+                                'backgroundColor': '#BBDEFB',
+                                'padding': '20px',
+                                'borderRadius': '5px',
+                                'marginBottom': '20px'
+                            },
+                            children=[
+                                html.H3("Filtros para Scatter Plot",
+                                        style={'color': '#1565C0'}),
+                                html.P("Este gráfico muestra la relación entre el área en m² y el precio, permitiendo filtrar por número de habitaciones y área seleccionada.",
+                                       style={'color': '#0D47A1'}),
+                                html.Label("Número de habitaciones:",
+                                           style={'color': '#0D47A1'}),
+                                dcc.Dropdown(
+                                    id='habitaciones_scatter',
+                                    options=[{'label': str(h), 'value': h} for h in sorted(df['bedrooms'].dropna().unique())],
+                                    placeholder="Seleccione el número de habitaciones",
+                                    style={'backgroundColor': 'white'}
+                                ),
+                                dcc.Graph(id='scatter_precio_area')
+                            ]
+                        )
+                    ]
+                ),
+                # Segunda fila de Gráficos (Heatmaps)
+                html.Div(
+                    style={'width': '100%', 'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'space-between'},
+                    children=[
+                        html.Div(
+                            style={
+                                'width': '48%',
+                                'backgroundColor': '#BBDEFB',
+                                'padding': '20px',
+                                'borderRadius': '5px',
+                                'marginBottom': '20px'
+                            },
+                            children=[
+                                html.H3("Filtros para Heatmap de Ubicación",
+                                        style={'color': '#1565C0'}),
+                                html.P("Este heatmap muestra la distribución geográfica de los precios de alquiler, basándose en la ciudad seleccionada.",
+                                       style={'color': '#0D47A1'}),
+                                html.Label("Ciudad:",
+                                           style={'color': '#0D47A1'}),
+                                dcc.Dropdown(
+                                    id='cityname_heatmap',
+                                    options=[{'label': loc, 'value': loc} for loc in df['cityname'].dropna().unique()],
+                                    placeholder="Seleccione una ciudad",
+                                    style={'backgroundColor': 'white'}
+                                ),
+                                dcc.Graph(id='heatmap_precio_ubicacion')
+                            ]
+                        ),
+                        html.Div(
+                            style={
+                                'width': '48%',
+                                'backgroundColor': '#BBDEFB',
+                                'padding': '20px',
+                                'borderRadius': '5px',
+                                'marginBottom': '20px'
+                            },
+                            children=[
+                                html.H3("Heatmap de Precio vs Variable Elegida",
+                                        style={'color': '#1565C0'}),
+                                html.P("Este heatmap permite visualizar cómo varía el precio en función de la variable seleccionada, como área, número de habitaciones, latitud o longitud.",
+                                       style={'color': '#0D47A1'}),
+                                html.Label("Seleccione una variable:",
+                                           style={'color': '#0D47A1'}),
+                                dcc.Dropdown(
+                                    id='heatmap_variable',
+                                    options=[
+                                        {'label': 'Área (m²)', 'value': 'square_feet'},
+                                        {'label': 'Número de habitaciones', 'value': 'bedrooms'},
+                                        {'label': 'Latitud', 'value': 'latitude'},
+                                        {'label': 'Longitud', 'value': 'longitude'}
+                                    ],
+                                    placeholder="Seleccione una variable",
+                                    style={'backgroundColor': 'white'}
+                                ),
+                                dcc.Graph(id='heatmap_precio_variable')
+                            ]
+                        )
+                    ]
+                )
+            ]
+        )
+    ]
+)
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
@@ -147,28 +261,28 @@ def actualizar_histograma(cityname, precio_max):
 
 @app.callback(
     Output('scatter_precio_area', 'figure'),
-    [Input('habitaciones_scatter', 'value'),
-     Input('area_scatter', 'value')]
+    [Input('habitaciones_scatter', 'value')]
 )
-def actualizar_scatter(habitaciones, area):
+
+
+
+def actualizar_scatter(habitaciones):
     df_filtrado = df.copy()
     if df_filtrado.empty:
         return px.scatter(x=[0], y=[0], title='No hay datos disponibles')
     if habitaciones is not None:
         df_filtrado = df_filtrado[df_filtrado['bedrooms'] == habitaciones]
-    if area is not None:
-        df_filtrado = df_filtrado[df_filtrado['square_feet'] == area]
     if df_filtrado.empty:
         return px.scatter(x=[0], y=[0], title='No hay datos disponibles')
     if df_filtrado.empty:
         return px.scatter(x=[0], y=[0], title='No hay datos disponibles')
     if habitaciones is not None:
         df_filtrado = df_filtrado[df_filtrado['bedrooms'] == habitaciones]
-    if area is not None:
-        df_filtrado = df_filtrado[df_filtrado['square_feet'] == area]
     if df_filtrado.empty:
         return px.scatter(x=[], y=[], title='No hay datos disponibles')
     return px.scatter(df_filtrado, x='square_feet', y='price', title='Relación entre Área y Precio')
+
+
 
 @app.callback(
     Output('heatmap_precio_ubicacion', 'figure'),
